@@ -1,7 +1,7 @@
 {
   "scripts": {
     "start": "node index.js",
-    "build": "cd client && npm install && vite build"
+    "build": "cd client && yarn install && yarn build"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
