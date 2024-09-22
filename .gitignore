@@ -1,6 +1,7 @@
 client/node_modules
 client/package-lock.json
 client/.env
+client/yarn.lock
 node_modules
 package-lock.json
 .env

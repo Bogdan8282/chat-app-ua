@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 
 function Auth({ type }) {
@@ -30,13 +30,26 @@ function Auth({ type }) {
         value={username}
         onChange={(e) => setUsername(e.target.value)}
       />
+      <br />
+      <br />
       <input
         type="password"
         placeholder="Password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
       />
+      <br />
+      <br />
       <button type="submit">{type === "login" ? "Login" : "Register"}</button>
+      {type === "login" ? (
+        <p>
+          Don't have an account? <Link to="/register">Register here</Link>.
+        </p>
+      ) : (
+        <p>
+          Already have an account? <Link to="/login">Login here</Link>.
+        </p>
+      )}
     </form>
   );
 }

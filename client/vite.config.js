@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      "/api": "https://chat-app-ua.onrender.com",
+      "/api": "https://chat-app-ua.onrender.com/",
     },
   },
 });

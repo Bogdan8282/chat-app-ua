@@ -8,6 +8,7 @@ function Chat() {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [username, setUsername] = useState("");
+  const [onlineUsers, setOnlineUsers] = useState([]);
   const navigate = useNavigate();
   const messagesEndRef = useRef(null);
 
@@ -17,11 +18,12 @@ function Chat() {
       navigate("/login");
     } else {
       setUsername(user.username);
+      socket.emit("userConnected", user.username);
 
       fetch("https://chat-app-ua.onrender.com/api/chat/messages")
         .then((response) => response.json())
         .then((data) => {
-          setMessages(data);
+          setMessages(data.reverse());
         })
         .catch((error) => console.error("Error fetching messages:", error));
     }
@@ -30,10 +32,16 @@ function Chat() {
       setMessages((prevMessages) => [...prevMessages, msg]);
     });
 
+    socket.on("updateUserList", (users) => {
+      setOnlineUsers(users);
+    });
+
     return () => {
+      socket.emit("userDisconnected", username);
       socket.off("message");
+      socket.off("updateUserList");
     };
-  }, [navigate]);
+  }, [navigate, username]);
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -47,47 +55,68 @@ function Chat() {
     setMessage("");
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    socket.emit("userDisconnected", username);
+    navigate("/login");
+  };
+
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100vh",
-        width: "100vw",
-      }}
-    >
+    <div style={{ display: "flex", height: "100vh", width: "100vw" }}>
       <div
         style={{
-          flex: 1,
-          overflowY: "auto",
+          width: "250px",
           padding: "10px",
+          borderRight: "1px solid #ccc",
           boxSizing: "border-box",
         }}
       >
-        {messages.map((msg, index) => (
-          <div key={index}>
-            <strong>{msg.sender || msg.username}:</strong> {msg.text}
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
+        <h2>{username}</h2>
+        <button onClick={handleLogout}>Logout</button>
+        <h3>Online Users</h3>
+        <ul>
+          {onlineUsers.map((user, index) => (
+            <li key={index}>{user}</li>
+          ))}
+        </ul>
       </div>
-      <form
-        onSubmit={handleSubmit}
-        style={{
-          padding: "10px",
-          borderTop: "1px solid #ccc",
-          boxSizing: "border-box",
-        }}
-      >
-        <input
-          type="text"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          required
-          style={{ width: "calc(100% - 100px)", marginRight: "10px" }}
-        />
-        <button type="submit">Send</button>
-      </form>
+
+      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        <div
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: "10px",
+            boxSizing: "border-box",
+          }}
+        >
+          {messages.map((msg, index) => (
+            <div key={index}>
+              <strong>{msg.sender || msg.username}:</strong> {msg.text}
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+
+        <form
+          onSubmit={handleSubmit}
+          style={{
+            padding: "10px",
+            borderTop: "1px solid #ccc",
+            boxSizing: "border-box",
+            display: "flex",
+          }}
+        >
+          <input
+            type="text"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            required
+            style={{ flex: 1, marginRight: "10px" }}
+          />
+          <button type="submit">Send</button>
+        </form>
+      </div>
     </div>
   );
 }

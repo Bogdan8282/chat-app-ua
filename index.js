@@ -13,9 +13,11 @@ const chatRoutes = require("./routes/chat");
 const app = express();
 const port = process.env.PORT || 5000;
 
+const AllowedOrigin = "https://chat-app-ua.onrender.com/";
+
 app.use(
   cors({
-    origin: "https://chat-app-ua.onrender.com",
+    origin: AllowedOrigin,
   })
 );
 app.use(express.json());
@@ -53,13 +55,25 @@ setInterval(deleteOldMessages, 60 * 60 * 1000);
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "https://chat-app-ua.onrender.com",
+    origin: AllowedOrigin,
     methods: ["GET", "POST"],
   },
 });
 
+let onlineUsers = new Set();
+
 io.on("connection", (socket) => {
   console.log("New client connected");
+
+  socket.on("userConnected", (username) => {
+    onlineUsers.add(username);
+    io.emit("updateUserList", Array.from(onlineUsers));
+  });
+
+  socket.on("userDisconnected", (username) => {
+    onlineUsers.delete(username);
+    io.emit("updateUserList", Array.from(onlineUsers));
+  });
 
   Message.find()
     .sort({ timestamp: -1 })
@@ -93,6 +107,13 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("Client disconnected");
+    const username = Array.from(onlineUsers).find(
+      (user) => user === socket.username
+    );
+    if (username) {
+      onlineUsers.delete(username);
+      io.emit("updateUserList", Array.from(onlineUsers));
+    }
   });
 });
 
