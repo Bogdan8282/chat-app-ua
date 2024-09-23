@@ -36,6 +36,10 @@ function Chat() {
       setOnlineUsers(users);
     });
 
+    socket.on("spamWarning", (message) => {
+      alert(message);
+    });
+
     return () => {
       socket.emit("userDisconnected", username);
       socket.off("message");

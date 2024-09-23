@@ -62,33 +62,51 @@ const io = new Server(server, {
 
 let onlineUsers = new Set();
 
+let userMessageData = new Map();
+const MESSAGE_LIMIT = 10;
+const TIME_FRAME = 10000;
+const BLOCK_TIME = 5000;
+
 io.on("connection", (socket) => {
   console.log("New client connected");
 
   socket.on("userConnected", (username) => {
+    socket.username = username;
     onlineUsers.add(username);
     io.emit("updateUserList", Array.from(onlineUsers));
-  });
 
-  socket.on("userDisconnected", (username) => {
-    onlineUsers.delete(username);
-    io.emit("updateUserList", Array.from(onlineUsers));
+    if (!userMessageData.has(username)) {
+      userMessageData.set(username, { timestamps: [], blockedUntil: 0 });
+    }
   });
-
-  Message.find()
-    .sort({ timestamp: -1 })
-    .limit(50)
-    .then((messages) => {
-      const formattedMessages = messages.map((msg) => ({
-        sender: msg.sender,
-        text: msg.text,
-        timestamp: msg.timestamp,
-      }));
-      socket.emit("messages", formattedMessages);
-    })
-    .catch((err) => console.error("Error fetching messages:", err));
 
   socket.on("message", async (message) => {
+    const now = Date.now();
+    const userData = userMessageData.get(message.username);
+
+    if (userData.blockedUntil > now) {
+      socket.emit(
+        "spamWarning",
+        "You are sending messages too quickly. Please wait."
+      );
+      return;
+    }
+
+    userData.timestamps = userData.timestamps.filter(
+      (timestamp) => now - timestamp < TIME_FRAME
+    );
+
+    if (userData.timestamps.length >= MESSAGE_LIMIT) {
+      userData.blockedUntil = now + BLOCK_TIME;
+      socket.emit(
+        "spamWarning",
+        "Too many messages! You are blocked for 5 seconds."
+      );
+      return;
+    }
+
+    userData.timestamps.push(now);
+
     try {
       const newMessage = new Message({
         sender: message.username,
@@ -107,12 +125,11 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("Client disconnected");
-    const username = Array.from(onlineUsers).find(
-      (user) => user === socket.username
-    );
-    if (username) {
+    const username = socket.username;
+    if (username && onlineUsers.has(username)) {
       onlineUsers.delete(username);
       io.emit("updateUserList", Array.from(onlineUsers));
+      userMessageData.delete(username);
     }
   });
 });
