@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import io from "socket.io-client";
 import { useNavigate } from "react-router-dom";
 
-const socket = io("http://localhost:5000");
+const socket = io("https://chat-app-ua.onrender.com");
 
 function Chat() {
   const [message, setMessage] = useState("");
@@ -20,7 +20,7 @@ function Chat() {
       setUsername(user.username);
       socket.emit("userConnected", user.username);
 
-      fetch("http://localhost:5000/api/chat/messages")
+      fetch("https://chat-app-ua.onrender.com/api/chat/messages")
         .then((response) => response.json())
         .then((data) => {
           setMessages(data.reverse());

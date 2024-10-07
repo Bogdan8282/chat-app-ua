@@ -13,7 +13,7 @@ const chatRoutes = require("./routes/chat");
 const app = express();
 const port = process.env.PORT || 5000;
 
-const AllowedOrigin = "http://localhost:5173";
+const AllowedOrigin = "https://chat-app-ua.onrender.com";
 
 app.use(
   cors({
