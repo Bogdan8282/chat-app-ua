@@ -22,7 +22,7 @@ function Auth({ type }) {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form style={{padding: '40px'}} onSubmit={handleSubmit}>
       <h2>{type === "login" ? "Login" : "Register"}</h2>
       <input
         type="text"
